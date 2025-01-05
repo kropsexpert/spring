@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-prod
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app-prod
+      environment: test
+  template:
+    metadata:
+      labels:
+        app: my-app-prod
+        environment: test
+    spec:
+      containers:
+      - name: my-app
+        image: gcr.io/vibrant-waters-429918-r1/springbootwebapp:v1.0.7
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+        env:
+        - name: DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: my-app-app-secret-prod
+              key: DB_URL
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: my-app-app-secret-prod
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: my-app-app-secret-prod
+              key: DB_PASSWORD
+        command: ["sh", "-c"]
+        args: ["java -Xmx512m -Xms256m -jar /app/SpringBootWebApp.jar -Dspring.datasource.url=$DB_URL -Dspring.datasource.username=$DB_USER -Dspring.datasource.password=$DB_PASSWORD"]
+        livenessProbe:
+          httpGet:
+            path: /health/check
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/check
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app-hpa-prod
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app-prod
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80

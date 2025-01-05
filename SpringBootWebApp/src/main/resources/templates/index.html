@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>User Input App</title>
+</head>
+<body>
+    <h1>Enter Text</h1>
+<!--    <form action="/submit" method="post">-->
+    <form th:action="@{/submit}" method="post">
+        <textarea name="content"></textarea>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+    <h2>Stored Inputs</h2>
+    <ul>
+        <li th:each="text : ${texts}" th:text="${text.content}"></li>
+    </ul>
+</body>
+</html>
